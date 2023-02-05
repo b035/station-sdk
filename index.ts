@@ -12,7 +12,10 @@ export class Result<C, V> {
 	code: C;
 	value: V | undefined;
 
-	unwrap_message: string = "invalid result";
+	private _unwrap_message: string = "invalid result";
+	public set unwrap_message(new_value: string) {
+		this._unwrap_message = new_value;
+	}
 
 	constructor(code: C, value: V) {
 		this.code = code;
@@ -36,13 +39,13 @@ export class Result<C, V> {
 	unwrap(msg?: string) {
 		if (this.failed) {
 			console.trace(this);
-			throw msg ?? this.unwrap_message;
+			throw msg ?? this._unwrap_message;
 		}
 		return this;
 	}
 
 	log_error(msg?: string) {
-		log("ERROR", msg ?? this.unwrap_message);
+		log("ERROR", msg ?? this._unwrap_message);
 	}
 
 	get failed(): boolean {
