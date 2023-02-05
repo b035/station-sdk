@@ -161,7 +161,7 @@ export const Registry = {
 
 		try {
 			await Fs.rm(full_path, { recursive: true });
-			log("ACTIVITY", `Registry: deconsting "${path}"`);
+			log("ACTIVITY", `Registry: deleting "${path}"`);
 
 			result.code = RegistryExitCodes.ok;
 		} catch {
