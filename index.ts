@@ -1,8 +1,43 @@
+import Child from "child_process";
 import Fs from "fs/promises";
 import Path from "path";
 
+// Basic
+export enum ExitCodes {
+	ok = 0,
+	err_unknown = 1,
+}
+
+export class Result<C, V> {
+	code: C;
+	value: V | undefined;
+
+	constructor(code: C, value: V) {
+		this.code = code;
+		this.value = value;
+	}
+
+	err(cb: (result: Result<C, V>) => any): Result<C, V> {
+		if (this.code > 0) {
+			cb(this);
+		}
+		return this;
+	}
+
+	ok(cb: (result: Result<C, V>) => any): Result<C, V> {
+		if (this.code <= 0) {
+			cb(this);
+		}
+		return this;
+	}
+
+	get failed(): boolean {
+		return this.code > 0;
+	}
+}
+
 // Log
-type LogType = "ACTIVITY" | "ERROR" | "OTHER" | "STATUS";
+export type LogType = "ACTIVITY" | "ERROR" | "OTHER" | "STATUS";
 
 export async function log(type: LogType, msg: string) {
 	msg = `TYPE ${type}\n${msg}`;
@@ -11,8 +46,8 @@ export async function log(type: LogType, msg: string) {
 	const filename= `log-${timestamp}`;
 
 	const path = Path.join(dirname, filename);
-	const file_result = await Registry.write(path, msg);
-	if (file_result.code != RegistryExitCodes.ok) return console.trace("failed to log");
+	(await Registry.write(path, msg))
+		.err(() => console.trace("failed to log"));
 }
 
 // Registry
@@ -24,11 +59,7 @@ export enum RegistryExitCodes {
 	err_write = 3,
 	err_del = 4,
 }
-
-interface RegistryResult<T> {
-	code: RegistryExitCodes,
-	value: T,
-}
+type RegistryResult<T> = Result<RegistryExitCodes, T>
 
 export const Registry = {
 	base_path: "registry",
@@ -39,22 +70,13 @@ export const Registry = {
 
 		try {
 			await Fs.mkdir(full_path, { recursive: true });
-			return {
-				code: RegistryExitCodes.ok,
-				value: undefined,
-			}
+			return new Result(RegistryExitCodes.ok, undefined);
 		} catch {
 			try {
 				await Fs.stat(full_path);
-				return {
-					code: RegistryExitCodes.ok_unchanged,
-					value: undefined,
-				}
+				return new Result(RegistryExitCodes.ok_unchanged, undefined);
 			} catch {
-				return {
-					code: RegistryExitCodes.err_unknown,
-					value: undefined,
-				}
+				return new Result(RegistryExitCodes.err_unknown, undefined);
 			}
 		}
 	},
@@ -62,46 +84,28 @@ export const Registry = {
 	async write(path: string, content: string): Promise<RegistryResult<undefined>> {
 		try {
 			await Fs.writeFile(Registry.full_path(path), content);
-			return {
-				code: RegistryExitCodes.ok,
-				value: undefined,
-			};
+			return new Result(RegistryExitCodes.ok, undefined);
 		} catch {
-			return {
-				code: RegistryExitCodes.err_write,
-				value: undefined,
-			};
+			return new Result(RegistryExitCodes.err_write, undefined);
 		}
 	},
 
 	async read(path: string): Promise<RegistryResult<string|undefined>> {
 		try {
 			const text = await Fs.readFile(Registry.full_path(path), { encoding: "utf8" });
-			return {
-				code: RegistryExitCodes.ok,
-				value: text,
-			}
+			return new Result(RegistryExitCodes.ok, text);
 		} catch {
-			return {
-				code: RegistryExitCodes.err_read,
-				value: undefined,
-			}
+			return new Result(RegistryExitCodes.err_read, undefined);
 		}
 	},
 
-	async deconste(path: string): Promise<RegistryResult<undefined>> {
+	async delete(path: string): Promise<RegistryResult<undefined>> {
 		try {
 			await Fs.rm(Registry.full_path(path), { recursive: true });
 			log("ACTIVITY", `Registry: deconsting "${path}"`);
-			return {
-				code: RegistryExitCodes.ok,
-				value: undefined,
-			}
+			return new Result(RegistryExitCodes.ok, undefined);
 		} catch {
-			return {
-				code: RegistryExitCodes.err_del,
-				value: undefined,
-			}
+			return new Result(RegistryExitCodes.err_del, undefined);
 		}
 	},
 
@@ -110,22 +114,57 @@ export const Registry = {
 		if (read_result.code == RegistryExitCodes.ok) return read_result;
 
 		const write_result = await Registry.write(path, default_value);
-		const new_result: RegistryResult<string> = {
-			code: write_result.code,
-			value: default_value,
-		}
-
-		return new_result;
+		return new Result(write_result.code, default_value);
 	},
 }
 
 // Shell
-type ShellAction = "exec" | "bg" | "kill";
+const PROCESS_TRACKING_DIR = Path.join("tmp", "processes");
+export const Shell = {
+	async exec(service: string, args: string): Promise<Child.ChildProcess|undefined> {
+		//get service command
+		const cmd_result = await Registry.read(Path.join("services", service));
+		if (cmd_result.failed) {
+			log("ERROR", `Shell: failed to get service for "${service}".`);
+			return;
+		}
 
-export function shell(action: ShellAction, cmd: string) {
-	const output = `${action}:${cmd}`;
-	log("ACTIVITY", `Running shell command\n${output}`);
-	console.log(output);
+		//get full command
+		const cmd = `${cmd_result.value} ${args}`;
 
-	//TODO hanle output
+		//spawn process
+		const cp = Child.spawn(cmd, {
+			shell: true,
+			detached: true,
+		});
+		
+		const pid = cp.pid;
+
+		//safety
+		if (pid == undefined) {
+			cp.kill();
+			return undefined; 
+		};
+
+		const path = Path.join(PROCESS_TRACKING_DIR, `process-${pid}`);
+
+		const abort = async (type: LogType) => {
+			if (cp.killed == false) cp.kill();
+			await Registry.delete(path);
+
+			log(type, `Shell: killed "${pid}"`);
+		}
+
+		cp.on("exit", () => abort("ACTIVITY"));
+
+		//create tracking directory if needed
+		(await Registry.mkdir(PROCESS_TRACKING_DIR))
+			.err(() => abort("ERROR"));
+		//track process
+		(await Registry.write(path, ""))
+			.err(() => abort("ERROR"))
+			.ok(() => log("ACTIVITY", `Shell: started "${cmd}" as ${pid}`));
+
+		return cp;
+	}
 }
