@@ -10,9 +10,6 @@ export async function log(type: LogType, msg: string) {
 	const timestamp= new Date().toISOString();
 	const filename= `log-${timestamp}`;
 
-	const dir_result = await Registry.mkdir(dirname);
-	if (dir_result.code > 0) return console.trace("failed to create logs directory");
-
 	const path = Path.join(dirname, filename);
 	const file_result = await Registry.write(path, msg);
 	if (file_result.code > 0) return console.trace("failed to log");
