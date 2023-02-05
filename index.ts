@@ -132,7 +132,8 @@ export const Shell = {
 		}
 
 		//get full command
-		const cmd = `${cmd_result.value} ${args}`;
+		const service_cmd = cmd_result.value!.split("\n")[0];
+		const cmd = `${service_cmd} ${args}`;
 
 		//spawn process
 		const cp = Child.spawn(cmd, {
