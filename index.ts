@@ -74,6 +74,14 @@ export const Registry = {
 			}
 		}
 	},
+
+	async read_or_create(path: string, default_value: string): Promise<RegistryResult<string|null>> {
+		let read_result = await Registry.read(path);
+		if (read_result.code == RegistryExitCodes.ok) return read_result;
+
+		let write_result = await Registry.write(path, default_value);
+		return write_result;
+	},
 }
 
 // Shell
