@@ -99,6 +99,15 @@ export const Registry = {
 		}
 	},
 
+	async ls(path: string): Promise<RegistryResult<string[]|undefined>> {
+		try {
+			const items = await Fs.readdir(Registry.full_path(path));
+			return new Result(RegistryExitCodes.ok, items);
+		} catch {
+			return new Result(RegistryExitCodes.err_read, undefined);
+		}
+	},
+
 	async delete(path: string): Promise<RegistryResult<undefined>> {
 		try {
 			await Fs.rm(Registry.full_path(path), { recursive: true });
@@ -174,5 +183,7 @@ export const Shell = {
 		result.code = ExitCodes.ok;
 		result.value = cp;
 		return result;
+
+		//TODO background services
 	}
 }
