@@ -111,7 +111,7 @@ export const Registry = {
 
 	async read_or_create(path: string, default_value: string): Promise<RegistryResult<string|undefined>> {
 		const read_result = await Registry.read(path);
-		if (read_result.code == RegistryExitCodes.ok) return read_result;
+		if (!read_result.failed) return read_result;
 
 		const write_result = await Registry.write(path, default_value);
 		return new Result(write_result.code, default_value);
@@ -119,9 +119,12 @@ export const Registry = {
 }
 
 // Shell
+type ShellResult = Result<ExitCodes, Child.ChildProcess|undefined>;
+
 const PROCESS_TRACKING_DIR = Path.join("tmp", "processes");
+
 export const Shell = {
-	async exec(service: string, args: string): Promise<Result<ExitCodes, Child.ChildProcess|undefined>> {
+	async exec(service: string, args: string): Promise<ShellResult> {
 		let result = new Result<ExitCodes, Child.ChildProcess|undefined>(ExitCodes.err, undefined);
 
 		//get service command
