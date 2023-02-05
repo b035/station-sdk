@@ -17,16 +17,31 @@ export class Result<C, V> {
 		this.value = value;
 	}
 
-	err(cb: (result: Result<C, V>) => any): Result<C, V> {
-		if (this.code > 0) {
+	err(cb: (result: Result<C, V>) => any) {
+		if (this.failed) {
 			cb(this);
 		}
 		return this;
 	}
 
-	ok(cb: (result: Result<C, V>) => any): Result<C, V> {
-		if (this.code <= 0) {
+	ok(cb: (result: Result<C, V>) => any) {
+		if (!this.failed) {
 			cb(this);
+		}
+		return this;
+	}
+
+	expect(msg: string) {
+		if (this.failed) {
+			throw msg;
+		}
+		return this;
+	}
+
+	unwrap() {
+		if (this.failed) {
+			console.trace(this);
+			throw "panicked due to failed result";
 		}
 		return this;
 	}
