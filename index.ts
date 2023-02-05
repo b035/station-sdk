@@ -186,8 +186,18 @@ type ShellResult = Result<ExitCodes, Child.ChildProcess|undefined>;
 const PROCESS_TRACKING_DIR = Path.join("tmp", "processes");
 
 export const Shell = {
-	async exec(service: string, args: string): Promise<ShellResult> {
+	async exec(stsh_cmd: string): Promise<ShellResult> {
 		let result: ShellResult = new Result(ExitCodes.err, undefined);
+
+		const separator_index = stsh_cmd.indexOf(" ");
+		let service, args;
+
+		if (separator_index == -1) {
+			service = stsh_cmd.substring(0, separator_index);
+			args = stsh_cmd.substring(separator_index);
+		} else {
+			service = stsh_cmd;
+		}
 
 		//get service command
 		const cmd_result = await Registry.read(Path.join("services", service));
@@ -198,16 +208,16 @@ export const Shell = {
 
 		//get full command
 		const service_cmd = cmd_result.value!.split("\n")[0];
-		const cmd = `${service_cmd} ${args}`;
+		const sys_cmd = `${service_cmd}${args ?? ""}`;
 
 		//spawn process
-		const cp = Child.spawn(cmd, {
+		const cp = Child.spawn(sys_cmd, {
 			shell: true,
 			detached: true,
 		});
 
 		//track
-		Shell.track(cmd, cp);
+		Shell.track(sys_cmd, cp);
 
 		result.code = ExitCodes.ok;
 		result.value = cp;
