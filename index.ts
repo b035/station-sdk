@@ -110,7 +110,12 @@ export const Registry = {
 		if (read_result.code == RegistryExitCodes.ok) return read_result;
 
 		const write_result = await Registry.write(path, default_value);
-		return write_result;
+		let new_result: RegistryResult<string> = {
+			code: write_result.code,
+			value: default_value,
+		}
+
+		return new_result;
 	},
 }
 
