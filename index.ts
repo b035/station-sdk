@@ -189,10 +189,11 @@ export const Shell = {
 	async exec(stsh_cmd: string): Promise<ShellResult> {
 		let result: ShellResult = new Result(ExitCodes.err, undefined);
 
+		stsh_cmd = stsh_cmd.replace(/^ /g, "");
 		const separator_index = stsh_cmd.indexOf(" ");
 		let service, args;
 
-		if (separator_index == -1) {
+		if (separator_index >= -1) {
 			service = stsh_cmd.substring(0, separator_index);
 			args = stsh_cmd.substring(separator_index);
 		} else {
