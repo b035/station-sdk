@@ -1,9 +1,26 @@
-export const Shell = {
-	tell(prefix: string, command: string) {
-		console.log(`${prefix}:${command}`);
-	},
+import Fs from "fs/promises";
+import Path from "path";
 
-	exec: (cmd: string) => Shell.tell("exec", cmd),
-	bg: (cmd: string) => Shell.tell("exec", cmd),
-	kill: (cmd: string) => Shell.tell("exec", cmd),
+// Log
+enum LogType {
+	status,
+	error,
+	other,
+}
+
+export function log(type: LogType, msg: string) {
+	let msg = `TYPE ${type}\n${msg}`;
+}
+
+// Shell
+enum ShellAction {
+	exec,
+	bg,
+	kill,
+}
+
+export function shell(action: ShellAction, cmd: string) {
+	console.log(`${action}:${cmd}`);
+
+	//TODO hanle output
 }
