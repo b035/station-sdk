@@ -5,7 +5,7 @@ import Path from "path";
 // Basic
 export enum ExitCodes {
 	ok = 0,
-	err_unknown = 1,
+	err = 1,
 }
 
 export class Result<C, V> {
@@ -121,12 +121,14 @@ export const Registry = {
 // Shell
 const PROCESS_TRACKING_DIR = Path.join("tmp", "processes");
 export const Shell = {
-	async exec(service: string, args: string): Promise<Child.ChildProcess|undefined> {
+	async exec(service: string, args: string): Promise<Result<ExitCodes, Child.ChildProcess|undefined>> {
+		let result = new Result<ExitCodes, Child.ChildProcess|undefined>(ExitCodes.err, undefined);
+
 		//get service command
 		const cmd_result = await Registry.read(Path.join("services", service));
 		if (cmd_result.failed) {
 			log("ERROR", `Shell: failed to get service for "${service}".`);
-			return;
+			return result;
 		}
 
 		//get full command
@@ -143,7 +145,7 @@ export const Shell = {
 		//safety
 		if (pid == undefined) {
 			cp.kill();
-			return undefined; 
+			return result; 
 		};
 
 		const path = Path.join(PROCESS_TRACKING_DIR, `process-${pid}`);
@@ -165,6 +167,8 @@ export const Shell = {
 			.err(() => abort("ERROR"))
 			.ok(() => log("ACTIVITY", `Shell: started "${cmd}" as ${pid}`));
 
-		return cp;
+		result.code = ExitCodes.ok;
+		result.value = cp;
+		return result;
 	}
 }
