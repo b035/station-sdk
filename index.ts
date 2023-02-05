@@ -59,7 +59,7 @@ export type LogType = "ACTIVITY" | "ERROR" | "OTHER" | "STATUS";
 export async function log(type: LogType, msg: string) {
 	msg = `TYPE ${type}\n${msg}`;
 	const dirname = "logs";
-	const timestamp= new Date().toISOString();
+	const timestamp= new Date().toISOString() + Math.random().toString();
 	const filename= `log-${timestamp}`;
 
 	const path = Path.join(dirname, filename);
@@ -240,7 +240,7 @@ export const Shell = {
 
 		const abort = async (type: LogType) => {
 			if (cp.killed == false) cp.kill();
-			log(type, `Shell: killed ${pid}`);
+			log(type, `Shell: ${pid} killed`);
 			(await Registry.delete(path)).log_error();
 		}
 
@@ -255,7 +255,7 @@ export const Shell = {
 		//handle killing
 		cp.on("exit", () => abort("STATUS"));
 		//in case it already died
-		if (cp.killed) abort("STATUS");
+		if (cp.exitCode != null) abort("STATUS");
 	},
 
 	async kill(pid: number) {
