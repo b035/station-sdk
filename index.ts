@@ -3,10 +3,10 @@ import Path from "path";
 
 // Log
 enum LogTypes {
-	"ACTIVITY",
-	"ERROR",
-	"OTHER",
-	"STATUS",
+	activity = "ACTIVITY",
+	error = "ERROR",
+	other = "OTHER",
+	status = "STATUS",
 }
 
 export async function log(type: LogTypes, msg: string) {
