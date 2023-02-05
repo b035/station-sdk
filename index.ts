@@ -2,7 +2,7 @@ import Fs from "fs/promises";
 import Path from "path";
 
 // Log
-enum LogTypes {
+export enum LogTypes {
 	activity = "ACTIVITY",
 	error = "ERROR",
 	other = "OTHER",
@@ -24,7 +24,7 @@ export async function log(type: LogTypes, msg: string) {
 }
 
 // Registry
-enum RegistryExitCodes {
+export enum RegistryExitCodes {
 	ok_unchanged = -1,
 	ok = 0,
 	err_unknown = 1,
@@ -122,10 +122,10 @@ export const Registry = {
 }
 
 // Shell
-enum ShellActions {
-	exec,
-	bg,
-	kill,
+export enum ShellActions {
+	exec = "exec",
+	bg = "bg",
+	kill = "kill",
 }
 
 export function shell(action: ShellActions, cmd: string) {
