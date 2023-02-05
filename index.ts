@@ -80,7 +80,7 @@ type RegistryResult<T> = Result<RegistryExitCodes, T>
 
 export const Registry = {
 	base_path: "registry",
-	full_path: (path: string) => Path.join(Registry.base_path, path),
+	full_path: (path: string) => Path.join(Registry.base_path, ...path.split("/")),
 
 	get_unwrap_message: (msg: string) => `Registry: ${msg}`,
 
@@ -185,7 +185,7 @@ export const Registry = {
 // Shell
 type ShellResult = Result<ExitCodes, Child.ChildProcess|undefined>;
 
-const PROCESS_TRACKING_DIR = Path.join("tmp", "processes");
+const PROCESS_TRACKING_DIR = "tmp/processes"
 
 export const Shell = {
 	async exec(stsh_cmd: string): Promise<ShellResult> {
