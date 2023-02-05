@@ -42,7 +42,9 @@ export class Result<C, V> {
 	}
 
 	log_error(msg?: string) {
-		log("ERROR", msg ?? this.unwrap_message);
+		if (this.failed) {
+			log("ERROR", msg ?? this.unwrap_message);
+		}
 		return this;
 	}
 
@@ -238,12 +240,9 @@ export const Shell = {
 
 		const abort = async (type: LogType) => {
 			if (cp.killed == false) cp.kill();
+			log(type, `Shell: killed ${pid}`);
 			(await Registry.delete(path)).log_error();
-
-			log(type, `Shell: killed "${pid}"`);
 		}
-
-		cp.on("exit", () => abort("ACTIVITY"));
 
 		//create tracking directory if needed
 		(await Registry.mkdir(PROCESS_TRACKING_DIR))
@@ -251,7 +250,12 @@ export const Shell = {
 		//track process
 		(await Registry.write(path, ""))
 			.err(() => abort("ERROR"))
-			.ok(() => log("ACTIVITY", `Shell: started "${cmd}" as ${pid}`));
+			.ok(() => log("ACTIVITY", `Shell: started tracking "${cmd}" (${pid})`));
+	
+		//handle killing
+		cp.on("exit", () => abort("STATUS"));
+		//in case it already died
+		if (cp.killed) abort("STATUS");
 	},
 
 	async kill(pid: number) {
