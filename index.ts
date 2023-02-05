@@ -2,14 +2,9 @@ import Fs from "fs/promises";
 import Path from "path";
 
 // Log
-export enum LogTypes {
-	activity = "ACTIVITY",
-	error = "ERROR",
-	other = "OTHER",
-	status = "STATUS",
-}
+type LogType = "ACTIVITY" | "ERROR" | "OTHER" | "STATUS";
 
-export async function log(type: LogTypes, msg: string) {
+export async function log(type: LogType, msg: string) {
 	msg = `TYPE ${type}\n${msg}`;
 	const dirname = "logs";
 	const timestamp= new Date().toISOString();
@@ -97,9 +92,10 @@ export const Registry = {
 		}
 	},
 
-	async deconste(path: string): Promise<RegistryResult<null>> {
+	async delete(path: string): Promise<RegistryResult<null>> {
 		try {
-			await Fs.rm(Registry.full_path(path));
+			await Fs.rm(Registry.full_path(path), { recursive: true });
+			log("ACTIVITY", `Registry: deleting "${path}"`);
 			return {
 				code: RegistryExitCodes.ok,
 				value: null,
@@ -122,14 +118,12 @@ export const Registry = {
 }
 
 // Shell
-export enum ShellActions {
-	exec = "exec",
-	bg = "bg",
-	kill = "kill",
-}
+type ShellAction = "exec" | "bg" | "kill";
 
-export function shell(action: ShellActions, cmd: string) {
-	console.log(`${action}:${cmd}`);
+export function shell(action: ShellAction, cmd: string) {
+	const output = `${action}:${cmd}`;
+	log("ACTIVITY", `Running shell command\n${output}`);
+	console.log(output);
 
 	//TODO hanle output
 }
