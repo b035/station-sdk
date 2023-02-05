@@ -43,6 +43,7 @@ export class Result<C, V> {
 
 	log_error(msg?: string) {
 		log("ERROR", msg ?? this.unwrap_message);
+		return this;
 	}
 
 	get failed(): boolean {
