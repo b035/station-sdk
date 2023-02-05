@@ -187,7 +187,7 @@ const PROCESS_TRACKING_DIR = Path.join("tmp", "processes");
 
 export const Shell = {
 	async exec(service: string, args: string): Promise<ShellResult> {
-		let result = new Result<ExitCodes, Child.ChildProcess|undefined>(ExitCodes.err, undefined);
+		let result: ShellResult = new Result(ExitCodes.err, undefined);
 
 		//get service command
 		const cmd_result = await Registry.read(Path.join("services", service));
@@ -205,16 +205,25 @@ export const Shell = {
 			shell: true,
 			detached: true,
 		});
-		
+
+		//track
+		Shell.track(cmd, cp);
+
+		result.code = ExitCodes.ok;
+		result.value = cp;
+		return result;
+	},
+
+	async track(cmd: string, cp: Child.ChildProcess) {
 		const pid = cp.pid;
 
 		//safety
 		if (pid == undefined) {
 			cp.kill();
-			return result; 
+			return;
 		};
 
-		const path = Path.join(PROCESS_TRACKING_DIR, `process-${pid}`);
+		const path = Path.join(PROCESS_TRACKING_DIR, pid.toString());
 
 		const abort = async (type: LogType) => {
 			if (cp.killed == false) cp.kill();
@@ -232,11 +241,12 @@ export const Shell = {
 		(await Registry.write(path, ""))
 			.err(() => abort("ERROR"))
 			.ok(() => log("ACTIVITY", `Shell: started "${cmd}" as ${pid}`));
+	},
 
-		result.code = ExitCodes.ok;
-		result.value = cp;
-		return result;
+	async kill(pid: number) {
+		//check if process exists
+		if ((await Registry.read(Path.join(PROCESS_TRACKING_DIR, pid.toString()))).failed) return;
 
-		//TODO background services
+		process.kill(pid);
 	}
 }
