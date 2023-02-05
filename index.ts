@@ -12,7 +12,7 @@ export async function log(type: LogType, msg: string) {
 
 	const path = Path.join(dirname, filename);
 	const file_result = await Registry.write(path, msg);
-	if (file_result.code > 0) return console.trace("failed to log");
+	if (file_result.code != RegistryExitCodes.ok) return console.trace("failed to log");
 }
 
 // Registry
@@ -34,47 +34,47 @@ export const Registry = {
 	base_path: "registry",
 	full_path: (path: string) => Path.join(Registry.base_path, path),
 
-	async mkdir(path: string): Promise<RegistryResult<null>> {
+	async mkdir(path: string): Promise<RegistryResult<undefined>> {
 		const full_path = Registry.full_path(path);
 
 		try {
 			await Fs.mkdir(full_path, { recursive: true });
 			return {
 				code: RegistryExitCodes.ok,
-				value: null,
+				value: undefined,
 			}
 		} catch {
 			try {
 				await Fs.stat(full_path);
 				return {
 					code: RegistryExitCodes.ok_unchanged,
-					value: null,
+					value: undefined,
 				}
 			} catch {
 				return {
 					code: RegistryExitCodes.err_unknown,
-					value: null,
+					value: undefined,
 				}
 			}
 		}
 	},
 
-	async write(path: string, content: string): Promise<RegistryResult<null>> {
+	async write(path: string, content: string): Promise<RegistryResult<undefined>> {
 		try {
 			await Fs.writeFile(Registry.full_path(path), content);
 			return {
 				code: RegistryExitCodes.ok,
-				value: null,
+				value: undefined,
 			};
 		} catch {
 			return {
 				code: RegistryExitCodes.err_write,
-				value: null,
+				value: undefined,
 			};
 		}
 	},
 
-	async read(path: string): Promise<RegistryResult<string|null>> {
+	async read(path: string): Promise<RegistryResult<string|undefined>> {
 		try {
 			const text = await Fs.readFile(Registry.full_path(path), { encoding: "utf8" });
 			return {
@@ -84,33 +84,33 @@ export const Registry = {
 		} catch {
 			return {
 				code: RegistryExitCodes.err_read,
-				value: null,
+				value: undefined,
 			}
 		}
 	},
 
-	async delete(path: string): Promise<RegistryResult<null>> {
+	async deconste(path: string): Promise<RegistryResult<undefined>> {
 		try {
 			await Fs.rm(Registry.full_path(path), { recursive: true });
-			log("ACTIVITY", `Registry: deleting "${path}"`);
+			log("ACTIVITY", `Registry: deconsting "${path}"`);
 			return {
 				code: RegistryExitCodes.ok,
-				value: null,
+				value: undefined,
 			}
 		} catch {
 			return {
 				code: RegistryExitCodes.err_del,
-				value: null,
+				value: undefined,
 			}
 		}
 	},
 
-	async read_or_create(path: string, default_value: string): Promise<RegistryResult<string|null>> {
+	async read_or_create(path: string, default_value: string): Promise<RegistryResult<string|undefined>> {
 		const read_result = await Registry.read(path);
 		if (read_result.code == RegistryExitCodes.ok) return read_result;
 
 		const write_result = await Registry.write(path, default_value);
-		let new_result: RegistryResult<string> = {
+		const new_result: RegistryResult<string> = {
 			code: write_result.code,
 			value: default_value,
 		}
