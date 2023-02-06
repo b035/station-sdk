@@ -12,7 +12,7 @@ export class Result<C, V> {
 	code: C;
 	value: V | undefined;
 
-	unwrap_message: () => string = () => "Unknown: invalid result.";
+	panic_message: () => string = () => "Unknown: invalid result.";
 
 	constructor(code: C, value: V) {
 		this.code = code;
@@ -33,10 +33,10 @@ export class Result<C, V> {
 		return this;
 	}
 
-	unwrap(msg?: string) {
+	or_panic(msg?: string) {
 		if (this.failed) {
 			console.trace(this);
-			const message = msg ?? this.unwrap_message();
+			const message = msg ?? this.panic_message();
 			log("PANIC", message);
 			throw message;
 		}
@@ -45,7 +45,7 @@ export class Result<C, V> {
 
 	log_error(msg?: string) {
 		if (this.failed) {
-			log("ERROR", msg ?? this.unwrap_message());
+			log("ERROR", msg ?? this.panic_message());
 		}
 		return this;
 	}
@@ -61,12 +61,11 @@ const LOG_DIR = "logs/current";
 
 export async function log(type: LogType, msg: string) {
 	msg = `TYPE ${type}\nPID ${process.pid}\n${msg}`;
-	const timestamp= new Date().toISOString() + Math.random().toString();
-	const filename= `log-${timestamp}`;
+	const timestamp = new Date().toISOString() + Math.random().toString();
+	const filename = `log-${timestamp}`;
 
 	const path = Path.join(LOG_DIR, filename);
-	(await Registry.write(path, msg))
-		.unwrap("failed to log");
+	(await Registry.write(path, msg)).or_panic("failed to log");
 }
 
 // Registry
@@ -84,13 +83,13 @@ export const Registry = {
 	base_path: "registry",
 	get_full_path: (path: string) => Path.join(Registry.base_path, ...path.split("/")),
 
-	get_unwrap_message: (msg: string) => `Registry: ${msg}`,
+	get_panic_message: (msg: string) => `Registry: ${msg}`,
 
 	async mkdir(path: string): Promise<RegistryResult<undefined>> {
 		const full_path = Registry.get_full_path(path);
 
 		const result = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
-		result.unwrap_message = () => Registry.get_unwrap_message(`failed to create directory "${path}"`);
+		result.panic_message = () => Registry.get_panic_message(`failed to create directory "${path}"`);
 
 		try {
 			await Fs.mkdir(full_path, { recursive: true });
@@ -108,7 +107,7 @@ export const Registry = {
 		const full_path = Registry.get_full_path(path);
 
 		const result = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
-		result.unwrap_message = () => Registry.get_unwrap_message(`failed to write file "${path}"`);
+		result.panic_message = () => Registry.get_panic_message(`failed to write file "${path}"`);
 
 		try {
 			await Fs.writeFile(full_path, content);
@@ -124,7 +123,7 @@ export const Registry = {
 		const full_path = Registry.get_full_path(path);
 
 		const result: RegistryResult<string|undefined> = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
-		result.unwrap_message = () => Registry.get_unwrap_message(`failed to read file "${path}"`);
+		result.panic_message = () => Registry.get_panic_message(`failed to read file "${path}"`);
 
 		try {
 			const text = await Fs.readFile(full_path, { encoding: "utf8" });
@@ -141,7 +140,7 @@ export const Registry = {
 		const full_path = Registry.get_full_path(path);
 
 		const result: RegistryResult<string[]|undefined> = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
-		result.unwrap_message = () => Registry.get_unwrap_message(`failed to read directory "${path}"`);
+		result.panic_message = () => Registry.get_panic_message(`failed to read directory "${path}"`);
 
 		try {
 			const items = await Fs.readdir(full_path);
@@ -158,7 +157,7 @@ export const Registry = {
 		const full_path = Registry.get_full_path(path);
 
 		const result = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
-		result.unwrap_message = () => Registry.get_unwrap_message(`failed to delete item "${path}"`);
+		result.panic_message = () => Registry.get_panic_message(`failed to delete item "${path}"`);
 
 		try {
 			await Fs.rm(full_path, { recursive: true });
@@ -224,7 +223,7 @@ export const Registry = {
 // Shell
 class ShellResult extends Result<ExitCodes, Child.ChildProcess|undefined> {
 	command: string = "";
-	unwrap_message = () => `Shell: an error occured while trying to run "${this.command}".`;
+	panic_message = () => `Shell: an error occured while trying to run "${this.command}".`;
 }
 
 const PROCESS_TRACKING_DIR = "tmp/processes"
