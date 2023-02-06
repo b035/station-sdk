@@ -59,7 +59,7 @@ export class Result<C, V> {
 export type LogType = "ACTIVITY" | "ERROR" | "PANIC" | "OTHER" | "STATUS";
 
 export async function log(type: LogType, msg: string) {
-	msg = `TYPE ${type}\n${msg}`;
+	msg = `TYPE ${type}\nPID ${process.pid}\n${msg}`;
 	const dirname = "logs";
 	const timestamp= new Date().toISOString() + Math.random().toString();
 	const filename= `log-${timestamp}`;
@@ -162,7 +162,7 @@ export const Registry = {
 
 		try {
 			await Fs.rm(full_path, { recursive: true });
-			log("ACTIVITY", `Registry: deleting "${path}"`);
+			log("ACTIVITY", `Registry: deleted "${path}"`);
 
 			result.code = RegistryExitCodes.ok;
 		} catch {
