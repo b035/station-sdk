@@ -12,7 +12,7 @@ export class Result<C, V> {
 	code: C;
 	value: V | undefined;
 
-	unwrap_message: string = "Unknown: invalid result.";
+	unwrap_message: () => string = () => "Unknown: invalid result.";
 
 	constructor(code: C, value: V) {
 		this.code = code;
@@ -36,14 +36,14 @@ export class Result<C, V> {
 	unwrap(msg?: string) {
 		if (this.failed) {
 			console.trace(this);
-			throw msg ?? this.unwrap_message;
+			throw msg ?? this.unwrap_message();
 		}
 		return this;
 	}
 
 	log_error(msg?: string) {
 		if (this.failed) {
-			log("ERROR", msg ?? this.unwrap_message);
+			log("ERROR", msg ?? this.unwrap_message());
 		}
 		return this;
 	}
@@ -88,7 +88,7 @@ export const Registry = {
 		const full_path = Registry.full_path(path);
 
 		const result = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
-		result.unwrap_message = Registry.get_unwrap_message(`failed to create directory "${path}"`);
+		result.unwrap_message = () => Registry.get_unwrap_message(`failed to create directory "${path}"`);
 
 		try {
 			await Fs.mkdir(full_path, { recursive: true });
@@ -109,7 +109,7 @@ export const Registry = {
 		const full_path = Registry.full_path(path);
 
 		const result = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
-		result.unwrap_message = Registry.get_unwrap_message(`failed to write file "${path}"`);
+		result.unwrap_message = () => Registry.get_unwrap_message(`failed to write file "${path}"`);
 
 		try {
 			await Fs.writeFile(full_path, content);
@@ -125,7 +125,7 @@ export const Registry = {
 		const full_path = Registry.full_path(path);
 
 		const result: RegistryResult<string|undefined> = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
-		result.unwrap_message = Registry.get_unwrap_message(`failed to read file "${path}"`);
+		result.unwrap_message = () => Registry.get_unwrap_message(`failed to read file "${path}"`);
 
 		try {
 			const text = await Fs.readFile(full_path, { encoding: "utf8" });
@@ -142,7 +142,7 @@ export const Registry = {
 		const full_path = Registry.full_path(path);
 
 		const result: RegistryResult<string[]|undefined> = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
-		result.unwrap_message = Registry.get_unwrap_message(`failed to read directory "${path}"`);
+		result.unwrap_message = () => Registry.get_unwrap_message(`failed to read directory "${path}"`);
 
 		try {
 			const items = await Fs.readdir(full_path);
@@ -159,7 +159,7 @@ export const Registry = {
 		const full_path = Registry.full_path(path);
 
 		const result = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
-		result.unwrap_message = Registry.get_unwrap_message(`failed to delete item "${path}"`);
+		result.unwrap_message = () => Registry.get_unwrap_message(`failed to delete item "${path}"`);
 
 		try {
 			await Fs.rm(full_path, { recursive: true });
@@ -185,7 +185,7 @@ export const Registry = {
 // Shell
 class ShellResult extends Result<ExitCodes, Child.ChildProcess|undefined> {
 	command: string = "";
-	unwrap_message: string = `Shell: an error occured while trying to run "${this.command}".`;
+	unwrap_message = () => `Shell: an error occured while trying to run "${this.command}".`;
 }
 
 const PROCESS_TRACKING_DIR = "tmp/processes"
