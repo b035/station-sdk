@@ -57,14 +57,14 @@ export class Result<C, V> {
 
 // Log
 export type LogType = "ACTIVITY" | "ERROR" | "PANIC" | "OTHER" | "STATUS";
+const LOG_DIR = "logs/current";
 
 export async function log(type: LogType, msg: string) {
 	msg = `TYPE ${type}\nPID ${process.pid}\n${msg}`;
-	const dirname = "logs";
 	const timestamp= new Date().toISOString() + Math.random().toString();
 	const filename= `log-${timestamp}`;
 
-	const path = Path.join(dirname, filename);
+	const path = Path.join(LOG_DIR, filename);
 	(await Registry.write(path, msg))
 		.unwrap("failed to log");
 }
