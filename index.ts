@@ -191,7 +191,35 @@ export const Registry = {
 		} catch {}
 
 		return result;
-	}
+	},
+	
+	async copy(src: string, dest: string): Promise<RegistryResult<undefined>> {
+		const full_src = Registry.get_full_path(src);
+		const full_dest = Registry.get_full_path(dest);
+
+		const result = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
+
+		try {
+			await Fs.cp(full_src, full_dest, { recursive: true });
+			result.code = RegistryExitCodes.ok;
+		} catch {}
+
+		return result;
+	},
+
+	async move(src: string, dest: string): Promise<RegistryResult<undefined>> {
+		const full_src = Registry.get_full_path(src);
+		const full_dest = Registry.get_full_path(dest);
+
+		const result = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
+
+		try {
+			await Fs.rename(full_src, full_dest);
+			result.code = RegistryExitCodes.ok;
+		} catch {}
+
+		return result;
+	},
 }
 
 // Shell
