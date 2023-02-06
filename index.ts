@@ -12,7 +12,7 @@ export class Result<C, V> {
 	code: C;
 	value: V | undefined;
 
-	unwrap_message: string = "invalid result";
+	unwrap_message: string = "Unknown: invalid result.";
 
 	constructor(code: C, value: V) {
 		this.code = code;
@@ -76,7 +76,7 @@ export enum RegistryExitCodes {
 	err_write = 3,
 	err_del = 4,
 }
-type RegistryResult<T> = Result<RegistryExitCodes, T>
+class RegistryResult<T> extends Result<RegistryExitCodes, T> {}
 
 export const Registry = {
 	base_path: "registry",
@@ -87,7 +87,7 @@ export const Registry = {
 	async mkdir(path: string): Promise<RegistryResult<undefined>> {
 		const full_path = Registry.full_path(path);
 
-		const result = new Result(RegistryExitCodes.err_unknown, undefined);
+		const result = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
 		result.unwrap_message = Registry.get_unwrap_message(`failed to create directory "${path}"`);
 
 		try {
@@ -108,7 +108,7 @@ export const Registry = {
 	async write(path: string, content: string): Promise<RegistryResult<undefined>> {
 		const full_path = Registry.full_path(path);
 
-		const result = new Result(RegistryExitCodes.err_unknown, undefined);
+		const result = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
 		result.unwrap_message = Registry.get_unwrap_message(`failed to write file "${path}"`);
 
 		try {
@@ -124,7 +124,7 @@ export const Registry = {
 	async read(path: string): Promise<RegistryResult<string|undefined>> {
 		const full_path = Registry.full_path(path);
 
-		const result: RegistryResult<string|undefined> = new Result(RegistryExitCodes.err_unknown, undefined);
+		const result: RegistryResult<string|undefined> = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
 		result.unwrap_message = Registry.get_unwrap_message(`failed to read file "${path}"`);
 
 		try {
@@ -141,7 +141,7 @@ export const Registry = {
 	async ls(path: string): Promise<RegistryResult<string[]|undefined>> {
 		const full_path = Registry.full_path(path);
 
-		const result: RegistryResult<string[]|undefined> = new Result(RegistryExitCodes.err_unknown, undefined);
+		const result: RegistryResult<string[]|undefined> = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
 		result.unwrap_message = Registry.get_unwrap_message(`failed to read directory "${path}"`);
 
 		try {
@@ -158,7 +158,7 @@ export const Registry = {
 	async delete(path: string): Promise<RegistryResult<undefined>> {
 		const full_path = Registry.full_path(path);
 
-		const result = new Result(RegistryExitCodes.err_unknown, undefined);
+		const result = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
 		result.unwrap_message = Registry.get_unwrap_message(`failed to delete item "${path}"`);
 
 		try {
@@ -178,18 +178,22 @@ export const Registry = {
 		if (!read_result.failed) return read_result;
 
 		const write_result = await Registry.write(path, default_value);
-		return new Result(write_result.code, default_value);
+		return new RegistryResult(write_result.code, default_value);
 	},
 }
 
 // Shell
-type ShellResult = Result<ExitCodes, Child.ChildProcess|undefined>;
+class ShellResult extends Result<ExitCodes, Child.ChildProcess|undefined> {
+	command: string = "";
+	unwrap_message: string = `Shell: an error occured while trying to run "${this.command}".`;
+}
 
 const PROCESS_TRACKING_DIR = "tmp/processes"
 
 export const Shell = {
 	async exec(stsh_cmd: string): Promise<ShellResult> {
-		let result: ShellResult = new Result(ExitCodes.err, undefined);
+		let result = new ShellResult(ExitCodes.err, undefined);
+		result.command = stsh_cmd;
 
 		stsh_cmd = stsh_cmd.replace(/^ /g, "");
 		const separator_index = stsh_cmd.indexOf(" ");
@@ -234,7 +238,7 @@ export const Shell = {
 		if (pid == undefined) {
 			cp.kill();
 			return;
-		};
+		}
 
 		const path = Path.join(PROCESS_TRACKING_DIR, pid.toString());
 
