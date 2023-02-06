@@ -36,7 +36,9 @@ export class Result<C, V> {
 	unwrap(msg?: string) {
 		if (this.failed) {
 			console.trace(this);
-			throw msg ?? this.unwrap_message();
+			const message = msg ?? this.unwrap_message();
+			log("PANIC", message);
+			throw message;
 		}
 		return this;
 	}
@@ -54,7 +56,7 @@ export class Result<C, V> {
 }
 
 // Log
-export type LogType = "ACTIVITY" | "ERROR" | "OTHER" | "STATUS";
+export type LogType = "ACTIVITY" | "ERROR" | "PANIC" | "OTHER" | "STATUS";
 
 export async function log(type: LogType, msg: string) {
 	msg = `TYPE ${type}\n${msg}`;
@@ -94,12 +96,9 @@ export const Registry = {
 			await Fs.mkdir(full_path, { recursive: true });
 			result.code = RegistryExitCodes.ok;
 		} catch {
-			try {
-				await Fs.stat(full_path);
-				result.code = RegistryExitCodes.ok_unchanged;
-			} catch {
-				result.code = RegistryExitCodes.err_unknown;
-			}
+			(await Registry.test(full_path))
+				.ok(() => result.code = RegistryExitCodes.ok_unchanged)
+				.err(() => result.code = RegistryExitCodes.err_unknown);
 		}
 
 		return result;
