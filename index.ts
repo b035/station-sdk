@@ -80,12 +80,12 @@ class RegistryResult<T> extends Result<RegistryExitCodes, T> {}
 
 export const Registry = {
 	base_path: "registry",
-	full_path: (path: string) => Path.join(Registry.base_path, ...path.split("/")),
+	get_full_path: (path: string) => Path.join(Registry.base_path, ...path.split("/")),
 
 	get_unwrap_message: (msg: string) => `Registry: ${msg}`,
 
 	async mkdir(path: string): Promise<RegistryResult<undefined>> {
-		const full_path = Registry.full_path(path);
+		const full_path = Registry.get_full_path(path);
 
 		const result = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
 		result.unwrap_message = () => Registry.get_unwrap_message(`failed to create directory "${path}"`);
@@ -106,7 +106,7 @@ export const Registry = {
 	},
 
 	async write(path: string, content: string): Promise<RegistryResult<undefined>> {
-		const full_path = Registry.full_path(path);
+		const full_path = Registry.get_full_path(path);
 
 		const result = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
 		result.unwrap_message = () => Registry.get_unwrap_message(`failed to write file "${path}"`);
@@ -122,7 +122,7 @@ export const Registry = {
 	},
 
 	async read(path: string): Promise<RegistryResult<string|undefined>> {
-		const full_path = Registry.full_path(path);
+		const full_path = Registry.get_full_path(path);
 
 		const result: RegistryResult<string|undefined> = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
 		result.unwrap_message = () => Registry.get_unwrap_message(`failed to read file "${path}"`);
@@ -139,7 +139,7 @@ export const Registry = {
 	},
 
 	async ls(path: string): Promise<RegistryResult<string[]|undefined>> {
-		const full_path = Registry.full_path(path);
+		const full_path = Registry.get_full_path(path);
 
 		const result: RegistryResult<string[]|undefined> = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
 		result.unwrap_message = () => Registry.get_unwrap_message(`failed to read directory "${path}"`);
@@ -156,7 +156,7 @@ export const Registry = {
 	},
 
 	async delete(path: string): Promise<RegistryResult<undefined>> {
-		const full_path = Registry.full_path(path);
+		const full_path = Registry.get_full_path(path);
 
 		const result = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
 		result.unwrap_message = () => Registry.get_unwrap_message(`failed to delete item "${path}"`);
@@ -180,6 +180,19 @@ export const Registry = {
 		const write_result = await Registry.write(path, default_value);
 		return new RegistryResult(write_result.code, default_value);
 	},
+
+	async test(path: string): Promise<RegistryResult<undefined>> {
+		const full_path = Registry.get_full_path(path);
+
+		const result = new RegistryResult(RegistryExitCodes.err_unknown, undefined);
+
+		try {
+			await Fs.stat(full_path);
+			result.code = RegistryExitCodes.ok;
+		} catch {}
+
+		return result;
+	}
 }
 
 // Shell
