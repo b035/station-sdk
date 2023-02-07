@@ -55,6 +55,19 @@ export class Result<C, V> {
 	}
 }
 
+// CLI
+export function start_service(main: (subcommand: string, args: string[]) => any): any {
+	const args = process.argv;
+	//remove first two args
+	args.splice(0, 2);
+	//get subcommand
+	const subcommand = args.splice(0, 1)[0];
+	//run
+	const result = main(subcommand, args);
+
+	return result;
+}
+
 // Log
 export type LogType = "ACTIVITY" | "ERROR" | "PANIC" | "OTHER" | "STATUS";
 const LOG_DIR = "logs/current";
