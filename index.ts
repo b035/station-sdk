@@ -6,6 +6,7 @@ import Path from "path";
 export enum ExitCodes {
 	Ok = 0,
 	Err = 1,
+	ErrNoCommand = 2,
 }
 
 export class Result<C, V> {
