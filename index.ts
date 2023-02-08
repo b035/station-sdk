@@ -261,7 +261,7 @@ class ShellResult extends Result<ExitCodes, Child.ChildProcess|undefined> {
 	panic_message = () => `Shell: an error occured while trying to run "${this.command}".`;
 }
 
-const PROCESS_TRACKING_DIR = "tmp/processes"
+const PROCESS_TRACKING_DIR = "processes"
 
 export const Shell = {
 	async exec(stsh_cmd: string): Promise<ShellResult> {
@@ -318,14 +318,14 @@ export const Shell = {
 		const abort = async (type: LogType) => {
 			if (cp.killed == false) cp.kill();
 			log(type, `Shell: ${pid} dead`);
-			(await Registry.delete(path)).log_error();
+			(await Memory.forget(path)).log_error();
 		}
 
 		//create tracking directory if needed
-		(await Registry.mkdir(PROCESS_TRACKING_DIR))
+		(await Memory.mkdir(PROCESS_TRACKING_DIR))
 			.err(() => abort("ERROR"));
 		//track process
-		(await Registry.write(path, ""))
+		(await Memory.remember(path, ""))
 			.err(() => abort("ERROR"))
 			.ok(() => log("ACTIVITY", `Shell: started tracking "${cmd}" (${pid})`));
 	
@@ -337,7 +337,7 @@ export const Shell = {
 
 	async kill(pid: number) {
 		//check if process exists
-		if ((await Registry.read(Path.join(PROCESS_TRACKING_DIR, pid.toString()))).failed) return;
+		if ((await Memory.recall(Path.join(PROCESS_TRACKING_DIR, pid.toString()))).failed) return;
 
 		process.kill(pid);
 	}
