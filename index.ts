@@ -75,11 +75,11 @@ const LOG_DIR = "logs/current";
 
 export async function log(type: LogType, msg: string) {
 	msg = `TYPE ${type}\nPID ${process.pid}\n${msg}`;
-	const timestamp = new Date().toISOString() + Math.random().toString();
+	const timestamp = new Date().toISOString();
 	const filename = `log-${timestamp}`;
 
 	const path = Path.join(LOG_DIR, filename);
-	(await Registry.write(path, msg)).or_panic("failed to log");
+	(await Registry.append(path, msg)).or_panic("failed to log");
 }
 
 // Registry
@@ -97,7 +97,7 @@ export const Registry = {
 	base_path: "registry",
 	get_full_path: (path: string) => Path.join(Registry.base_path, ...path.split("/")),
 
-	get_panic_message: (msg: string) => `Registry: ${msg}`,
+	get_panic_message: (msg: string) => `Registry: ${msg}.`,
 
 	join_paths(...args: string[]): string {
 		return args.join("/");
@@ -129,6 +129,22 @@ export const Registry = {
 
 		try {
 			await Fs.writeFile(full_path, content);
+			result.code = RegistryExitCodes.Ok;
+		} catch {
+			result.code = RegistryExitCodes.ErrWrite;
+		}
+
+		return result;
+	},
+
+	async append(path: string, content: string): Promise<RegistryResult<undefined>> {
+		const full_path = Registry.get_full_path(path);
+
+		const result = new RegistryResult(RegistryExitCodes.ErrUnknown, undefined);
+		result.panic_message = () => Registry.get_panic_message(`failed to append to file "${path}"`);
+
+		try {
+			await Fs.appendFile(full_path, content);
 			result.code = RegistryExitCodes.Ok;
 		} catch {
 			result.code = RegistryExitCodes.ErrWrite;
