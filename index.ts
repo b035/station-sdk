@@ -179,7 +179,6 @@ export const Registry = {
 
 		try {
 			await Fs.rm(full_path, { recursive: true });
-
 			result.code = RegistryExitCodes.Ok;
 		} catch {
 			result.code = RegistryExitCodes.ErrDel;
@@ -236,6 +235,23 @@ export const Registry = {
 
 		return result;
 	},
+}
+
+// Memory
+export const Memory = {
+	base_path: "tmp",
+	get_full_path: (path: string) => Registry.join_paths(Memory.base_path, path),
+
+	async init(): Promise<RegistryResult<undefined>> {
+		return await Registry.mkdir(Memory.base_path);
+	},
+
+	mkdir: async (path: string) => await Registry.mkdir(Memory.get_full_path(path)),
+	ls: async (path: string) => await Registry.read(Memory.get_full_path(path)),
+
+	remember: async (path: string, content: string) => await Registry.write(Memory.get_full_path(path), content),
+	recall: async (path: string) => await Registry.read(Memory.get_full_path(path)),
+	forget: async (path: string) => await Registry.delete(Memory.get_full_path(path)),
 }
 
 // Shell
