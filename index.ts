@@ -243,6 +243,7 @@ export const Memory = {
 	get_full_path: (path: string) => Registry.join_paths(Memory.base_path, path),
 
 	async init(): Promise<RegistryResult<undefined>> {
+		await Registry.delete(Memory.base_path);
 		return await Registry.mkdir(Memory.base_path);
 	},
 
