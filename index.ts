@@ -51,6 +51,10 @@ export class Result<C, V> {
 		return this;
 	}
 
+	to_string(): string {
+		return `${this.code}|${this.value}`;
+	}
+
 	get failed(): boolean {
 		return this.code > 0;
 	}
