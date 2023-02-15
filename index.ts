@@ -61,7 +61,7 @@ export class Result<C, V> {
 }
 
 // CLI
-export function start_service(main: (subcommand: string, args: string[]) => any): any {
+export function start_service(main: (subcommand: string, args: string[]) => Result<any, any>, cb: (result: Result<any, any>) => void) {
 	const args = process.argv;
 	//remove first two args
 	args.splice(0, 2);
@@ -70,7 +70,7 @@ export function start_service(main: (subcommand: string, args: string[]) => any)
 	//run
 	const result = main(subcommand, args);
 
-	return result;
+	cb(result);
 }
 
 // Log
