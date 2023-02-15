@@ -61,14 +61,14 @@ export class Result<C, V> {
 }
 
 // CLI
-export function start_service(main: (subcommand: string, args: string[]) => Result<any, any>, cb: (result: Result<any, any>) => void) {
+export async function start_service(main: (subcommand: string, args: string[]) => Promise<Result<any, any>>, cb: (result: Result<any, any>) => void) {
 	const args = process.argv;
 	//remove first two args
 	args.splice(0, 2);
 	//get subcommand
 	const subcommand = args.splice(0, 1)[0];
 	//run
-	const result = main(subcommand, args);
+	const result = await main(subcommand, args);
 
 	cb(result);
 }
