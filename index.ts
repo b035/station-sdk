@@ -13,6 +13,7 @@ export class Result<C, V> {
 	code: C;
 	value: V | undefined;
 
+	log_message = () => `Unknown: set value to ${this.value}.`;
 	panic_message: () => string = () => "Unknown: invalid result.";
 
 	constructor(code: C, value: V) {
@@ -53,6 +54,13 @@ export class Result<C, V> {
 
 	to_string(): string {
 		return `${this.code}|${this.value}`;
+	}
+
+	finalize(value: V) {
+		this.value = value;
+		log("ACTIVITY", this.log_message());
+
+		return this;
 	}
 
 	get failed(): boolean {
