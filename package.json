@@ -1,6 +1,6 @@
 {
   "name": "@the-stations-project/sdk",
-  "version": "0.1.14-beta1",
+  "version": "0.1.15-beta",
   "description": "SDK for developing Station Services.",
   "main": "index.js",
   "scripts": {
