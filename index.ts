@@ -122,7 +122,11 @@ export enum RegistryExitCodes {
 	ErrWrite = 3,
 	ErrDel = 4,
 }
-class RegistryResult<T> extends Result<RegistryExitCodes, T> {}
+class RegistryResult<T> extends Result<RegistryExitCodes, T|undefined> {
+	constructor() {
+		super(RegistryExitCodes.ErrUnknown, undefined);
+	}
+}
 
 export const Registry = {
 	base_path: "registry",
@@ -137,16 +141,16 @@ export const Registry = {
 	async mkdir(path: string): Promise<RegistryResult<undefined>> {
 		const full_path = Registry.get_full_path(path);
 
-		const result = new RegistryResult(RegistryExitCodes.ErrUnknown, undefined);
+		const result = new RegistryResult<undefined>();
 		result.panic_message = () => Registry.get_panic_message(`failed to create directory "${path}"`);
 
 		try {
 			await Fs.mkdir(full_path, { recursive: true });
-			result.code = RegistryExitCodes.Ok;
+			result.finalize_with_code(RegistryExitCodes.Ok);
 		} catch {
 			(await Registry.test(full_path))
-				.ok(() => result.code = RegistryExitCodes.OkUnchanged)
-				.err(() => result.code = RegistryExitCodes.ErrUnknown);
+				.ok(() => result.finalize_with_code(RegistryExitCodes.OkUnchanged))
+				.err(() => result.finalize_with_code(RegistryExitCodes.ErrUnknown));
 		}
 
 		return result;
@@ -155,7 +159,7 @@ export const Registry = {
 	async write(path: string, content: string): Promise<RegistryResult<undefined>> {
 		const full_path = Registry.get_full_path(path);
 
-		const result = new RegistryResult(RegistryExitCodes.ErrUnknown, undefined);
+		const result = new RegistryResult<undefined>();
 		result.panic_message = () => Registry.get_panic_message(`failed to write file "${path}"`);
 
 		try {
@@ -171,14 +175,14 @@ export const Registry = {
 	async append(path: string, content: string): Promise<RegistryResult<undefined>> {
 		const full_path = Registry.get_full_path(path);
 
-		const result = new RegistryResult(RegistryExitCodes.ErrUnknown, undefined);
+		const result = new RegistryResult<undefined>();
 		result.panic_message = () => Registry.get_panic_message(`failed to append to file "${path}"`);
 
 		try {
 			await Fs.appendFile(full_path, content);
-			result.code = RegistryExitCodes.Ok;
+			result.finalize_with_code(RegistryExitCodes.Ok);
 		} catch {
-			result.code = RegistryExitCodes.ErrWrite;
+			result.finalize_with_code(RegistryExitCodes.ErrWrite);
 		}
 
 		return result;
@@ -187,7 +191,7 @@ export const Registry = {
 	async read(path: string): Promise<RegistryResult<string|undefined>> {
 		const full_path = Registry.get_full_path(path);
 
-		const result: RegistryResult<string|undefined> = new RegistryResult(RegistryExitCodes.ErrUnknown, undefined);
+		const result: RegistryResult<string|undefined> = new RegistryResult<undefined>();
 		result.panic_message = () => Registry.get_panic_message(`failed to read file "${path}"`);
 
 		try {
@@ -204,15 +208,14 @@ export const Registry = {
 	async ls(path: string): Promise<RegistryResult<string[]|undefined>> {
 		const full_path = Registry.get_full_path(path);
 
-		const result: RegistryResult<string[]|undefined> = new RegistryResult(RegistryExitCodes.ErrUnknown, undefined);
+		const result = new RegistryResult<string[]|undefined>();
 		result.panic_message = () => Registry.get_panic_message(`failed to read directory "${path}"`);
 
 		try {
 			const items = await Fs.readdir(full_path);
-			result.code = RegistryExitCodes.Ok;
-			result.value = items;
+			result.finalize(RegistryExitCodes.Ok, items);
 		} catch {
-			result.code = RegistryExitCodes.ErrRead;
+			result.finalize_with_code(RegistryExitCodes.ErrRead);
 		}
 
 		return result;
@@ -221,14 +224,14 @@ export const Registry = {
 	async delete(path: string): Promise<RegistryResult<undefined>> {
 		const full_path = Registry.get_full_path(path);
 
-		const result = new RegistryResult(RegistryExitCodes.ErrUnknown, undefined);
+		const result = new RegistryResult<undefined>();
 		result.panic_message = () => Registry.get_panic_message(`failed to delete item "${path}"`);
 
 		try {
 			await Fs.rm(full_path, { recursive: true });
-			result.code = RegistryExitCodes.Ok;
+			result.finalize_with_code(RegistryExitCodes.Ok);
 		} catch {
-			result.code = RegistryExitCodes.ErrDel;
+			result.finalize_with_code(RegistryExitCodes.ErrDel);
 		}
 
 		return result;
@@ -239,17 +242,17 @@ export const Registry = {
 		if (!read_result.failed) return read_result;
 
 		const write_result = await Registry.write(path, default_value);
-		return new RegistryResult(write_result.code, default_value);
+		return write_result;
 	},
 
 	async test(path: string): Promise<RegistryResult<undefined>> {
 		const full_path = Registry.get_full_path(path);
 
-		const result = new RegistryResult(RegistryExitCodes.ErrUnknown, undefined);
+		const result = new RegistryResult<undefined>();
 
 		try {
 			await Fs.stat(full_path);
-			result.code = RegistryExitCodes.Ok;
+			result.finalize_with_code(RegistryExitCodes.Ok);
 		} catch {}
 
 		return result;
@@ -259,11 +262,11 @@ export const Registry = {
 		const full_src = Registry.get_full_path(src);
 		const full_dest = Registry.get_full_path(dest);
 
-		const result = new RegistryResult(RegistryExitCodes.ErrUnknown, undefined);
+		const result = new RegistryResult<undefined>();
 
 		try {
 			await Fs.cp(full_src, full_dest, { recursive: true });
-			result.code = RegistryExitCodes.Ok;
+			result.finalize_with_code(RegistryExitCodes.Ok);
 		} catch {}
 
 		return result;
@@ -273,11 +276,11 @@ export const Registry = {
 		const full_src = Registry.get_full_path(src);
 		const full_dest = Registry.get_full_path(dest);
 
-		const result = new RegistryResult(RegistryExitCodes.ErrUnknown, undefined);
+		const result = new RegistryResult<undefined>();
 
 		try {
 			await Fs.rename(full_src, full_dest);
-			result.code = RegistryExitCodes.Ok;
+			result.finalize_with_code(RegistryExitCodes.Ok);
 		} catch {}
 
 		return result;
@@ -304,16 +307,21 @@ export const Memory = {
 
 // Shell
 class ShellResult extends Result<ExitCodes, Child.ChildProcess|undefined> {
-	command: string = "";
-	panic_message = () => `Shell: an error occured while trying to run "${this.command}".`;
+	cmd: string = "";
+	panic_message = () => `Shell: an error occured while trying to run "${this.cmd}".`;
+
+	constructor(cmd: string) {
+		super(ExitCodes.Err, undefined);
+
+		this.cmd = cmd;
+	}
 }
 
 const PROCESS_TRACKING_DIR = "processes"
 
 export const Shell = {
 	async exec(stsh_cmd: string): Promise<ShellResult> {
-		let result = new ShellResult(ExitCodes.Err, undefined);
-		result.command = stsh_cmd;
+		let result = new ShellResult(stsh_cmd);
 
 		stsh_cmd = stsh_cmd.replace(/^ /g, "");
 		const separator_index = stsh_cmd.indexOf(" ");
