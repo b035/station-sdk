@@ -11,7 +11,7 @@ export enum ExitCodes {
 
 export class Result<C, V> {
 	code: C;
-	value: V | undefined;
+	value: V;
 
 	private initial_code: C;
 	private initial_value: V;
@@ -70,6 +70,16 @@ export class Result<C, V> {
 
 	revert() {
 		return this.finalize(this.initial_code, this.initial_value);
+	}
+
+	finalize_with_value(value: V) {
+		this.value = value;
+		return this.finalize(this.code, value);
+	}
+
+	finalize_with_code(code: C) {
+		this.code = code;
+		return this.finalize(code, this.value);
 	}
 
 	get failed(): boolean {
