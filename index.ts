@@ -69,7 +69,7 @@ export class Result<C, V> {
 	}
 
 	revert() {
-		this.finalize(this.initial_code, this.initial_value);
+		return this.finalize(this.initial_code, this.initial_value);
 	}
 
 	get failed(): boolean {
