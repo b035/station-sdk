@@ -56,7 +56,7 @@ export class Result<C, V> {
 		return `${this.code}|${this.value}`;
 	}
 
-	finalize(value: V, code: C) {
+	finalize(code: C, value: V) {
 		this.code = code;
 		this.value = value;
 
