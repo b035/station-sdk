@@ -13,12 +13,15 @@ export class Result<C, V> {
 	code: C;
 	value: V | undefined;
 
+	private initial_code: C;
+	private initial_value: V;
+
 	log_message: undefined | (() => string);
 	panic_message: () => string = () => "Unknown: invalid result.";
 
 	constructor(code: C, value: V) {
-		this.code = code;
-		this.value = value;
+		this.initial_code = this.code = code;
+		this.initial_value = this.value = value;
 	}
 
 	err(cb: (result: Result<C, V>) => any) {
@@ -63,6 +66,10 @@ export class Result<C, V> {
 		if (this.log_message) log("ACTIVITY", this.log_message());
 
 		return this;
+	}
+
+	revert() {
+		this.finalize(this.initial_code, this.initial_value);
 	}
 
 	get failed(): boolean {
