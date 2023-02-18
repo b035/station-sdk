@@ -7,6 +7,7 @@ export enum ExitCodes {
 	Ok = 0,
 	ErrUnknown = 1,
 	ErrNoCommand = 2,
+	ErrMissingParameter = 3,
 }
 
 export class Result<C, V> {
