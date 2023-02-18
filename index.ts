@@ -2,7 +2,7 @@ import Child from "child_process";
 import Fs from "fs/promises";
 import Path from "path";
 
-// Basic
+/* BASIC */
 export enum ExitCodes {
 	Ok = 0,
 	ErrUnknown = 1,
@@ -87,7 +87,7 @@ export class Result<C, V> {
 	}
 }
 
-// CLI
+/* CLI */
 export async function start_service(main: (subcommand: string, args: string[]) => Promise<Result<any, any>>, cb: (result: Result<any, any>) => void) {
 	const args = process.argv;
 	//remove first two args
@@ -100,20 +100,22 @@ export async function start_service(main: (subcommand: string, args: string[]) =
 	cb(result);
 }
 
-// Log
+/* LOGS */
 export type LogType = "ACTIVITY" | "ERROR" | "PANIC" | "OTHER" | "STATUS";
 const LOG_DIR = "logs/current";
 
 export async function log(type: LogType, msg: string) {
 	msg = `TYPE ${type}\nPID ${process.pid}\n${msg}\n\n`;
+
+	/* get filename */
 	const timestamp = new Date().toISOString();
 	const filename = `log-${timestamp}`;
-
 	const path = Path.join(LOG_DIR, filename);
+
 	(await Registry.append(path, msg)).or_panic("has_failed to log");
 }
 
-// Registry
+/* REGISTRY */
 export enum RegistryExitCodes {
 	OkUnchanged = -1,
 	Ok = 0,
@@ -290,7 +292,7 @@ export const Registry = {
 	},
 }
 
-// Memory
+/* MEMORY */
 export const Memory = {
 	base_path: "tmp",
 	get_full_path: (path: string) => Registry.join_paths(Memory.base_path, path),
@@ -308,7 +310,7 @@ export const Memory = {
 	forget: async (path: string) => await Registry.delete(Memory.get_full_path(path)),
 }
 
-// Shell
+/* SHELL */
 class ShellResult extends Result<ExitCodes, Child.ChildProcess|undefined> {
 	cmd: string = "";
 	panic_message = () => `Shell: an error occured while trying to run "${this.cmd}".`;
@@ -337,24 +339,24 @@ export const Shell = {
 			service = station_command;
 		}
 
-		//get service command
+		/* get service command */
 		const cmd_result = await Registry.read(Path.join("services", service));
 		if (cmd_result.has_failed) {
 			log("ERROR", `Shell: failed to get service for "${service}".`);
 			return result;
 		}
 
-		//get full command
+		/* get full command */
 		const service_cmd = cmd_result.value!.split("\n")[0];
 		const sys_cmd = `${service_cmd}${args ?? ""}`;
 
-		//spawn process
+		/* spawn process */
 		const cp = Child.spawn(sys_cmd, {
 			shell: true,
 			detached: true,
 		});
 
-		//track
+		/* track */
 		Shell.track(sys_cmd, cp);
 
 		result.code = ExitCodes.Ok;
@@ -365,7 +367,7 @@ export const Shell = {
 	async track(cmd: string, cp: Child.ChildProcess) {
 		const pid = cp.pid;
 
-		//safety
+		/* safety */
 		if (pid == undefined) {
 			cp.kill();
 			return;
@@ -379,15 +381,15 @@ export const Shell = {
 			(await Memory.forget(path)).or_log_error();
 		}
 
-		//create tracking directory if needed
+		/* create tracking directory if needed */
 		(await Memory.mkdir(PROCESS_TRACKING_DIR))
 			.err(() => abort("ERROR"));
-		//track process
+		/* track process */
 		(await Memory.remember(path, ""))
 			.err(() => abort("ERROR"))
 			.ok(() => log("ACTIVITY", `Shell: started tracking "${cmd}" (${pid})`));
 	
-		//handle killing
+		/* handle killing */
 		cp.on("exit", () => abort("STATUS"));
 		//in case it already died
 		if (cp.exitCode != null) abort("STATUS");
