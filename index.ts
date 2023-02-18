@@ -323,18 +323,18 @@ class ShellResult extends Result<ExitCodes, Child.ChildProcess|undefined> {
 const PROCESS_TRACKING_DIR = "processes"
 
 export const Shell = {
-	async exec(stsh_cmd: string): Promise<ShellResult> {
-		let result = new ShellResult(stsh_cmd);
+	async exec(station_command: string): Promise<ShellResult> {
+		let result = new ShellResult(station_command);
 
-		stsh_cmd = stsh_cmd.replace(/^ /g, "");
-		const separator_index = stsh_cmd.indexOf(" ");
+		station_command = station_command.replace(/^ /g, "");
+		const separator_index = station_command.indexOf(" ");
 		let service, args;
 
 		if (separator_index > -1) {
-			service = stsh_cmd.substring(0, separator_index);
-			args = stsh_cmd.substring(separator_index);
+			service = station_command.substring(0, separator_index);
+			args = station_command.substring(separator_index);
 		} else {
-			service = stsh_cmd;
+			service = station_command;
 		}
 
 		//get service command
