@@ -130,12 +130,15 @@ class RegistryResult<T> extends Result<RegistryExitCodes, T|undefined> {
 
 export const Registry = {
 	base_path: "registry",
-	get_full_path: (path: string) => Path.join(Registry.base_path, ...path.split("/")),
+	get_full_path: (path: string) => Registry.join_paths(Registry.base_path, path),
 
 	get_panic_message: (msg: string) => `Registry: ${msg}.`,
 
 	join_paths(...args: string[]): string {
-		return args.join("/");
+		return Path.join(...args
+			.map(x => x.split("/"))
+			.flat()
+		);
 	},
 
 	async mkdir(path: string): Promise<RegistryResult<undefined>> {
