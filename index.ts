@@ -5,7 +5,7 @@ import Path from "path";
 // Basic
 export enum ExitCodes {
 	Ok = 0,
-	Err = 1,
+	ErrUnknown = 1,
 	ErrNoCommand = 2,
 }
 
@@ -25,21 +25,21 @@ export class Result<C, V> {
 	}
 
 	err(cb: (result: Result<C, V>) => any) {
-		if (this.failed) {
+		if (this.has_failed) {
 			cb(this);
 		}
 		return this;
 	}
 
 	ok(cb: (result: Result<C, V>) => any) {
-		if (!this.failed) {
+		if (!this.has_failed) {
 			cb(this);
 		}
 		return this;
 	}
 
 	or_panic(msg?: string) {
-		if (this.failed) {
+		if (this.has_failed) {
 			console.trace(this);
 			const message = msg ?? this.panic_message();
 			log("PANIC", message);
@@ -48,8 +48,8 @@ export class Result<C, V> {
 		return this;
 	}
 
-	log_error(msg?: string) {
-		if (this.failed) {
+	or_log_error(msg?: string) {
+		if (this.has_failed) {
 			log("ERROR", msg ?? this.panic_message());
 		}
 		return this;
@@ -68,10 +68,6 @@ export class Result<C, V> {
 		return this;
 	}
 
-	revert() {
-		return this.finalize(this.initial_code, this.initial_value);
-	}
-
 	finalize_with_value(value: V) {
 		this.value = value;
 		return this.finalize(this.code, value);
@@ -82,7 +78,11 @@ export class Result<C, V> {
 		return this.finalize(code, this.value);
 	}
 
-	get failed(): boolean {
+	revert() {
+		return this.finalize(this.initial_code, this.initial_value);
+	}
+
+	get has_failed(): boolean {
 		return this.code > 0;
 	}
 }
@@ -110,7 +110,7 @@ export async function log(type: LogType, msg: string) {
 	const filename = `log-${timestamp}`;
 
 	const path = Path.join(LOG_DIR, filename);
-	(await Registry.append(path, msg)).or_panic("failed to log");
+	(await Registry.append(path, msg)).or_panic("has_failed to log");
 }
 
 // Registry
@@ -142,7 +142,7 @@ export const Registry = {
 		const full_path = Registry.get_full_path(path);
 
 		const result = new RegistryResult<undefined>();
-		result.panic_message = () => Registry.get_panic_message(`failed to create directory "${path}"`);
+		result.panic_message = () => Registry.get_panic_message(`has_failed to create directory "${path}"`);
 
 		try {
 			await Fs.mkdir(full_path, { recursive: true });
@@ -160,7 +160,7 @@ export const Registry = {
 		const full_path = Registry.get_full_path(path);
 
 		const result = new RegistryResult<undefined>();
-		result.panic_message = () => Registry.get_panic_message(`failed to write file "${path}"`);
+		result.panic_message = () => Registry.get_panic_message(`has_failed to write file "${path}"`);
 
 		try {
 			await Fs.writeFile(full_path, content);
@@ -176,7 +176,7 @@ export const Registry = {
 		const full_path = Registry.get_full_path(path);
 
 		const result = new RegistryResult<undefined>();
-		result.panic_message = () => Registry.get_panic_message(`failed to append to file "${path}"`);
+		result.panic_message = () => Registry.get_panic_message(`has_failed to append to file "${path}"`);
 
 		try {
 			await Fs.appendFile(full_path, content);
@@ -192,7 +192,7 @@ export const Registry = {
 		const full_path = Registry.get_full_path(path);
 
 		const result: RegistryResult<string|undefined> = new RegistryResult<undefined>();
-		result.panic_message = () => Registry.get_panic_message(`failed to read file "${path}"`);
+		result.panic_message = () => Registry.get_panic_message(`has_failed to read file "${path}"`);
 
 		try {
 			const text = await Fs.readFile(full_path, { encoding: "utf8" });
@@ -209,7 +209,7 @@ export const Registry = {
 		const full_path = Registry.get_full_path(path);
 
 		const result = new RegistryResult<string[]|undefined>();
-		result.panic_message = () => Registry.get_panic_message(`failed to read directory "${path}"`);
+		result.panic_message = () => Registry.get_panic_message(`has_failed to read directory "${path}"`);
 
 		try {
 			const items = await Fs.readdir(full_path);
@@ -225,7 +225,7 @@ export const Registry = {
 		const full_path = Registry.get_full_path(path);
 
 		const result = new RegistryResult<undefined>();
-		result.panic_message = () => Registry.get_panic_message(`failed to delete item "${path}"`);
+		result.panic_message = () => Registry.get_panic_message(`has_failed to delete item "${path}"`);
 
 		try {
 			await Fs.rm(full_path, { recursive: true });
@@ -239,7 +239,7 @@ export const Registry = {
 
 	async read_or_create(path: string, default_value: string): Promise<RegistryResult<string|undefined>> {
 		const read_result = await Registry.read(path);
-		if (!read_result.failed) return read_result;
+		if (!read_result.has_failed) return read_result;
 
 		const write_result = await Registry.write(path, default_value);
 		return write_result;
@@ -311,7 +311,7 @@ class ShellResult extends Result<ExitCodes, Child.ChildProcess|undefined> {
 	panic_message = () => `Shell: an error occured while trying to run "${this.cmd}".`;
 
 	constructor(cmd: string) {
-		super(ExitCodes.Err, undefined);
+		super(ExitCodes.ErrUnknown, undefined);
 
 		this.cmd = cmd;
 	}
@@ -336,8 +336,8 @@ export const Shell = {
 
 		//get service command
 		const cmd_result = await Registry.read(Path.join("services", service));
-		if (cmd_result.failed) {
-			log("ERROR", `Shell: failed to get service for "${service}".`);
+		if (cmd_result.has_failed) {
+			log("ERROR", `Shell: has_failed to get service for "${service}".`);
 			return result;
 		}
 
@@ -373,7 +373,7 @@ export const Shell = {
 		const abort = async (type: LogType) => {
 			if (cp.killed == false) cp.kill();
 			log(type, `Shell: ${pid} dead`);
-			(await Memory.forget(path)).log_error();
+			(await Memory.forget(path)).or_log_error();
 		}
 
 		//create tracking directory if needed
@@ -392,7 +392,7 @@ export const Shell = {
 
 	async kill(pid: number) {
 		//check if process exists
-		if ((await Memory.recall(Path.join(PROCESS_TRACKING_DIR, pid.toString()))).failed) return;
+		if ((await Memory.recall(Path.join(PROCESS_TRACKING_DIR, pid.toString()))).has_failed) return;
 
 		process.kill(pid);
 	}
