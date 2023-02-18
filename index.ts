@@ -340,7 +340,7 @@ export const Shell = {
 		//get service command
 		const cmd_result = await Registry.read(Path.join("services", service));
 		if (cmd_result.has_failed) {
-			log("ERROR", `Shell: has_failed to get service for "${service}".`);
+			log("ERROR", `Shell: failed to get service for "${service}".`);
 			return result;
 		}
 
