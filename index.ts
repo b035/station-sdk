@@ -139,6 +139,7 @@ export const Registry = {
 
 	join_paths(...args: string[]): string {
 		return Path.join(...args
+			.filter(x => x)
 			.map(x => x.split("/"))
 			.flat()
 		);
