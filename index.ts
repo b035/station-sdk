@@ -113,7 +113,7 @@ export async function log(type: LogType, msg: string) {
 	const filename = `log-${timestamp}`;
 	const path = Path.join(LOG_DIR, filename);
 
-	(await Registry.append(path, msg)).or_panic("has_failed to log");
+	(await Registry.append(path, msg)).or_panic("failed to log");
 }
 
 /* REGISTRY */
@@ -148,7 +148,7 @@ export const Registry = {
 		const full_path = Registry.get_full_path(path);
 
 		const result = new RegistryResult<undefined>();
-		result.panic_message = () => Registry.get_panic_message(`has_failed to create directory "${path}"`);
+		result.panic_message = () => Registry.get_panic_message(`failed to create directory "${path}"`);
 
 		try {
 			await Fs.mkdir(full_path, { recursive: true });
@@ -166,7 +166,7 @@ export const Registry = {
 		const full_path = Registry.get_full_path(path);
 
 		const result = new RegistryResult<undefined>();
-		result.panic_message = () => Registry.get_panic_message(`has_failed to write file "${path}"`);
+		result.panic_message = () => Registry.get_panic_message(`failed to write file "${path}"`);
 
 		try {
 			await Fs.writeFile(full_path, content);
@@ -182,7 +182,7 @@ export const Registry = {
 		const full_path = Registry.get_full_path(path);
 
 		const result = new RegistryResult<undefined>();
-		result.panic_message = () => Registry.get_panic_message(`has_failed to append to file "${path}"`);
+		result.panic_message = () => Registry.get_panic_message(`failed to append to file "${path}"`);
 
 		try {
 			await Fs.appendFile(full_path, content);
@@ -198,7 +198,7 @@ export const Registry = {
 		const full_path = Registry.get_full_path(path);
 
 		const result: RegistryResult<string|undefined> = new RegistryResult<undefined>();
-		result.panic_message = () => Registry.get_panic_message(`has_failed to read file "${path}"`);
+		result.panic_message = () => Registry.get_panic_message(`failed to read file "${path}"`);
 
 		try {
 			const text = await Fs.readFile(full_path, { encoding: "utf8" });
@@ -215,7 +215,7 @@ export const Registry = {
 		const full_path = Registry.get_full_path(path);
 
 		const result = new RegistryResult<string[]|undefined>();
-		result.panic_message = () => Registry.get_panic_message(`has_failed to read directory "${path}"`);
+		result.panic_message = () => Registry.get_panic_message(`failed to read directory "${path}"`);
 
 		try {
 			const items = await Fs.readdir(full_path);
@@ -231,7 +231,7 @@ export const Registry = {
 		const full_path = Registry.get_full_path(path);
 
 		const result = new RegistryResult<undefined>();
-		result.panic_message = () => Registry.get_panic_message(`has_failed to delete item "${path}"`);
+		result.panic_message = () => Registry.get_panic_message(`failed to delete item "${path}"`);
 
 		try {
 			await Fs.rm(full_path, { recursive: true });
