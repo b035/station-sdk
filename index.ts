@@ -88,8 +88,8 @@ export class Result<C, V> {
 	}
 }
 
-export function arguments_missing(args: IArguments, count: number) {
-	return [...args].filter(x => x).length < count;
+export function contains_undefined_arguments(args: IArguments) {
+	return [...args].filter(x => x == undefined).length != 0;
 }
 
 /* CLI */
