@@ -88,6 +88,10 @@ export class Result<C, V> {
 	}
 }
 
+export function missing_arguments(args: IArguments, count: number) {
+	return [...args].filter(x => x).length < count;
+}
+
 /* CLI */
 export async function start_service(main: (subcommand: string, args: string[]) => Promise<Result<any, any>>, cb: (result: Result<any, any>) => void) {
 	const args = process.argv;
