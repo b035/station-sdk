@@ -88,7 +88,7 @@ export class Result<C, V> {
 	}
 }
 
-export function missing_arguments(args: IArguments, count: number) {
+export function arguments_missing(args: IArguments, count: number) {
 	return [...args].filter(x => x).length < count;
 }
 
