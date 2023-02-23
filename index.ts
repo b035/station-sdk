@@ -346,7 +346,7 @@ export const Shell = {
 		}
 
 		/* get service command */
-		const cmd_result = await Registry.read(Path.join("services", service));
+		const cmd_result = await Registry.read(Path.join("modules", service));
 		if (cmd_result.has_failed) {
 			log("ERROR", `Shell: failed to get service for "${service}".`);
 			return result;
