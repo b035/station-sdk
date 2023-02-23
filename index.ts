@@ -381,7 +381,7 @@ export const Shell = {
 			let stdout = "";
 			const cp = shell_result.value!;
 			cp.stdout?.on("data", (data) => stdout += data.toString());
-			cp.on("data", () => res(result.finalize_with_value(stdout)));
+			cp.on("exit", () => res(result.finalize_with_value(stdout)));
 		});
 	},
 
