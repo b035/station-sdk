@@ -370,6 +370,21 @@ export const Shell = {
 		return result;
 	},
 
+	exec_sync(station_command: string): Promise<Result<ExitCodes, string>> {
+		return new Promise(async (res) => {
+			const result = new Result(ExitCodes.Ok, "");
+
+			/* execute */
+			const shell_result = (await Shell.exec(station_command)).or_log_error();
+			if (shell_result.has_failed) return res(result.finalize_with_code(ExitCodes.ErrUnknown));
+
+			let stdout = "";
+			const cp = shell_result.value!;
+			cp.stdout?.on("data", (data) => stdout += data.toString());
+			cp.on("data", () => res(result.finalize_with_value(stdout)));
+		});
+	},
+
 	async track(cmd: string, cp: Child.ChildProcess) {
 		const pid = cp.pid;
 
