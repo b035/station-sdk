@@ -408,7 +408,7 @@ export const Shell = {
 		/* track process */
 		(await Memory.remember(path, ""))
 			.err(() => abort("ERROR"))
-			.ok(() => log("ACTIVITY", `Shell: started tracking "${cmd}" (${pid})`));
+			.ok(() => log("ACTIVITY", `Shell: started tracking process using module "${cmd.split(" ")[1]}" (${pid})`));
 	
 		/* handle killing */
 		cp.on("exit", () => abort("STATUS"));
