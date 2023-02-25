@@ -421,5 +421,12 @@ export const Shell = {
 		if ((await Memory.recall(Path.join(PROCESS_TRACKING_DIR, pid.toString()))).has_failed) return;
 
 		process.kill(pid);
+	},
+
+	async parse_output(output: string) {
+		const code = output.split("|");
+		const value = output.split("\n")[0];
+
+		return [code, value];
 	}
 }
