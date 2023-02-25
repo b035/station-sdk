@@ -336,25 +336,25 @@ export const Shell = {
 
 		station_command = station_command.replace(/^ /g, "");
 		const separator_index = station_command.indexOf(" ");
-		let service, args;
+		let module, args;
 
 		if (separator_index > -1) {
-			service = station_command.substring(0, separator_index);
+			module = station_command.substring(0, separator_index);
 			args = station_command.substring(separator_index);
 		} else {
-			service = station_command;
+			module = station_command;
 		}
 
-		/* get service command */
-		const cmd_result = await Registry.read(Path.join("modules", service));
+		/* get module command */
+		const cmd_result = await Registry.read(Path.join("modules", module));
 		if (cmd_result.has_failed) {
-			log("ERROR", `Shell: failed to get service for "${service}".`);
+			log("ERROR", `Shell: failed to get command for "${module}".`);
 			return result;
 		}
 
 		/* get full command */
-		const service_cmd = cmd_result.value!.split("\n")[0];
-		const sys_cmd = `${service_cmd}${args ?? ""}`;
+		const module_cmd = cmd_result.value!.split("\n")[0];
+		const sys_cmd = `${module_cmd}${args ?? ""}`;
 
 		/* spawn process */
 		const cp = Child.spawn(sys_cmd, {
